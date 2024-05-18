@@ -60,9 +60,15 @@ We will pull changes from upstream, so if you want to make a plugin for Vencord 
 git clone https://github.com/Davilarek/Vencord.git
 cd Vencord
 pnpm install --frozen-lockfile
-pnpm buildWeb
 pnpm build
 ```
+
+```
+pnpm buildWeb
+```
+Could be optionally run if you intend to use BetterVencord on the web, like ArmCord, or Discord in a browser. 
+
+After compile has finished, the resulting files in `dist` is required to be left intact, in order to maintain BetterVencord functionality. The rest of the source could be optionally removed. Should you wish to keep the source, you could for instance, set it up to have partial update functionality (see `Updating` section below), and/or for implementing other third party Vencord plugins
 
 ### Troubleshooting
 If for whatever reason you are an error during `pnpm install` e.g.
@@ -84,8 +90,8 @@ You have few options:
 Run [VenCord's official installer](https://github.com/Vendicated/Vencord#installing--uninstalling) first. If your discord installation path includes files or directories that are not owned by you, or that you are not a member of, or you have no write access to, ensure that you run the installer as a privileged account. Vencord needs to patch `app.asar`.
 
 Once done,
-1. Backup your Vencord user data first. On Linux for example is defined by [`XDG_CONFIG_HOME`](https://github.com/Vencord/Installer/blob/main/install.sh), as `$HOME/.config/Vencord/`.
-2. Copy your the contents of your compiled BetterVencord's dist directory/folder into own Vencord user data.
+1. Backup your Vencord user data first. On Linux for example is defined by [`XDG_CONFIG_HOME`](https://github.com/Vencord/Installer/blob/main/install.sh), as `$HOME/.config/Vencord/`, on Windows, try checking `%appdata%/Vencord`.
+2. Copy your the contents of your compiled BetterVencord's `dist` directory/folder into own Vencord user data.
 
 ## Installing on Browser
 Needs building manually too. These are incompatible with desktop app variant, as it generates a standalone variant that doesn't have the ability to check for updates, for a forked build that does not have releases.
@@ -134,11 +140,11 @@ cd $HOME/.config/Vencord
 git fetch origin
 git merge origin main
 ```
+For Windows, substitute `$HOME/.config/Vencord` for `%appdata%/Vencord`
 
 Manually compiling and installing are as follows:
 ```
 pnpm install --frozen-lockfile
-pnpm buildWeb
 pnpm build
 ```
 
