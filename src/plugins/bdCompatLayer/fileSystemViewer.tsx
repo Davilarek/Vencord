@@ -27,6 +27,9 @@ import { addCustomPlugin, convertPlugin } from "./pluginConstructor";
 import TreeView, { findInTree, TreeNode } from "./treeView";
 import { FSUtils, readdirPromise, reloadCompatLayer, ZIPUtils } from "./utils";
 
+import { FolderIcon, PlusIcon, RestartIcon } from "@components/Icons";
+import { QuickAction, QuickActionCard } from "@components/VencordSettings/quickActions";
+
 type SettingsPlugin = Plugin & {
     customSections: ((ID: Record<string, unknown>) => any)[];
 };
@@ -167,23 +170,14 @@ function makeTab() {
 
     return <SettingsTab title={TabName}>
         <Forms.FormSection title="File System Actions">
-            <Card className={cl("quick-actions-card")}>
-                <React.Fragment>
-                    <Button size={Button.Sizes.SMALL} onClick={() => ZIPUtils.downloadZip()}>
-                        Export Filesystem as ZIP
-                    </Button>
-                    <Button size={Button.Sizes.SMALL} onClick={() => ZIPUtils.importZip()}>
-                        Import Filesystem From ZIP
-                    </Button>
-                    <Button size={Button.Sizes.SMALL} onClick={() => reloadCompatLayer()}>
-                        Reload BD Plugins
-                    </Button>
-                    <Button size={Button.Sizes.SMALL} onClick={async () => await FSUtils.importFile("//BD/plugins", true, false, ".js")}>
-                        Import BD Plugin
-                    </Button>
-                    <Button size={Button.Sizes.SMALL} onClick={async () => await FSUtils.importFile("//BD/plugins", true, true, ".js")}>
-                        Import Bulk Plugins
-                    </Button>
+            <QuickActionCard>
+                <QuickAction text="Export Filesystem as ZIP" action={() => ZIPUtils.downloadZip()} Icon={FolderIcon}/>
+                <QuickAction text="Import Filesystem From ZIP" action={() => ZIPUtils.importZip()} Icon={FolderIcon}/>
+                <QuickAction text="Reload BD Plugins" action={() => reloadCompatLayer()} Icon={RestartIcon}/>
+                <QuickAction text="Import BD Plugin" action={async () => await FSUtils.importFile("//BD/plugins", true, false, ".js")} Icon={PlusIcon}/>
+                <QuickAction text="Import Bulk Plugins" action={async () => await FSUtils.importFile("//BD/plugins", true, true, ".js")} Icon={FolderIcon}/>
+            </QuickActionCard>
+                  <Card className={cl("quick-actions-card")}>
                     <Forms.FormText>Size of `/`: {
                         (() => {
                             try {
@@ -194,7 +188,6 @@ function makeTab() {
                             }
                         })()
                     } MB</Forms.FormText>
-                </React.Fragment>
             </Card>
         </Forms.FormSection>
         {/* <TreeView onContextMenu={contextMenuHandler} selectedNode={selectedNode} selectNode={handleNodeSelect} data={ */}
