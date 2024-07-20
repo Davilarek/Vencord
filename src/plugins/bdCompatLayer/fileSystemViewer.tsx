@@ -19,7 +19,7 @@
 import { classNameFactory } from "@api/Styles";
 import { SettingsTab, wrapTab } from "@components/VencordSettings/shared";
 import { Plugin } from "@utils/types";
-import { Button, Card, Forms, React, useRef } from "@webpack/common";
+import { Card, Forms, React, useRef } from "@webpack/common";
 
 import { PLUGIN_NAME } from "./constants";
 import { getGlobalApi } from "./fakeBdApi";
