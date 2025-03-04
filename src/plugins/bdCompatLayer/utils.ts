@@ -346,6 +346,9 @@ export const FSUtils = {
         }
         fs.mkdirSync(directory, mode);
     },
+    toBuffer(buffer: ArrayBuffer, byteOffset = 0, byteLength = buffer.byteLength - byteOffset) {
+        return new Uint8Array(buffer, byteOffset, byteLength);
+    },
     async importFile(targetPath: string, autoGuessName: boolean = false, bulk = false, filter: string | undefined = undefined) {
         const fileOrFiles = await openFileSelect(filter, bulk);
         const files = fileOrFiles.length ? (fileOrFiles as File[]) : [fileOrFiles as File];
@@ -362,7 +365,9 @@ export const FSUtils = {
             }
             fs.writeFile(
                 filePath,
-                window.BrowserFS.BFSRequire("buffer").Buffer.from(
+                // window.BrowserFS.BFSRequire("buffer").Buffer.from(
+                // window.Buffer.from(
+                FSUtils.toBuffer(
                     await file.arrayBuffer()
                 ),
                 () => { }
