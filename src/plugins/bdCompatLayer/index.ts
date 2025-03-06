@@ -27,12 +27,12 @@ import { Clipboard, React } from "@webpack/common";
 
 import { PluginMeta } from "~plugins";
 
-import { BROWSERFS_BUILD_HASH, PLUGIN_NAME } from "./constants";
+import { PLUGIN_NAME,ZENFS_BUILD_HASH } from "./constants";
 import { cleanupGlobal, createGlobalBdApi, getGlobalApi } from "./fakeBdApi";
 import { addContextMenu, addDiscordModules, FakeEventEmitter, fetchWithCorsProxyFallback, Patcher } from "./fakeStuff";
 import { injectSettingsTabs, unInjectSettingsTab } from "./fileSystemViewer";
 import { addCustomPlugin, convertPlugin, removeAllCustomPlugins } from "./pluginConstructor";
-import { aquireNative, FSUtils, getDeferred, patchMkdirSync, patchReadFileSync, reloadCompatLayer, simpleGET, ZIPUtils } from "./utils";
+import { aquireNative, FSUtils, getDeferred, reloadCompatLayer, simpleGET, ZIPUtils } from "./utils";
 // String.prototype.replaceAll = function (search, replacement) {
 //     var target = this;
 //     return target.split(search).join(replacement);
@@ -143,22 +143,29 @@ const thePlugin = {
                 proxyUrl +
                 // "https://github.com/jvilk/BrowserFS/releases/download/v1.4.3/browserfs.min.js"
                 // "http://localhost:8080/browserfs.min.js"
-                `https://github.com/LosersUnited/BrowserFS-builds/raw/${BROWSERFS_BUILD_HASH}/dist/browserfs.min.js` // TODO: Add option to change this
+                // `https://github.com/LosersUnited/BrowserFS-builds/raw/${BROWSERFS_BUILD_HASH}/dist/browserfs.min.js` // TODO: Add option to change this
+                `https://github.com/LosersUnited/ZenFS-builds/raw/${ZENFS_BUILD_HASH}/bin/bundle.js` // TODO: Add option to change this
             )
                 .then(out => out.text())
                 .then(out2 => {
                     out2 += "\n//# sourceURL=betterDiscord://internal/BrowserFs.js";
                     eval.call(
                         window,
-                        out2.replaceAll(
-                            ".localStorage",
-                            ".Vencord.Util.localStorage"
-                        )
+                        // out2.replaceAll(
+                        //     ".localStorage",
+                        //     ".Vencord.Util.localStorage"
+                        // )
+                        out2
                     );
+                    const zen = globalThis.ZenFS_Aquire();
+                    const ZenFs = zen.zenfs;
+                    const ZenFsDom = zen.zenfs_dom;
+
                     const temp: any = {};
                     const target = {
                         browserFSSetting: {},
                     }; // because "let" sucks
+                    /*
                     if (Settings.plugins[this.name].useRealFsInstead === true) {
                         target.browserFSSetting = {
                             fs: "AsyncMirror",
@@ -167,22 +174,26 @@ const thePlugin = {
                                 async: { fs: "RealFS", options: { apiUrl: "http://localhost:2137/api" } },
                             },
                         };
-                    } else if (Settings.plugins[this.name].useIndexedDBInstead === true) {
+                    } else*/ if (Settings.plugins[this.name].useIndexedDBInstead === true) {
                         target.browserFSSetting = {
-                            fs: "AsyncMirror",
-                            options: {
-                                sync: { fs: "InMemory" },
-                                async: { fs: "IndexedDB", options: { storeName: "VirtualFS" } },
-                            },
+                            // fs: "AsyncMirror",
+                            // options: {
+                            //     sync: { fs: "InMemory" },
+                            //     async: { fs: "IndexedDB", options: { storeName: "VirtualFS" } },
+                            // },
+                            backend: ZenFsDom.IndexedDB,
+                            storeName: "VirtualFS",
                         };
                     } else {
                         target.browserFSSetting = {
-                            fs: "LocalStorage",
+                            // fs: "LocalStorage",
+                            backend: ZenFsDom.WebStorage, storage: Vencord.Util.localStorage,
                         };
                     }
-                    window.BrowserFS.install(temp);
-                    window.BrowserFS.configure(
-                        target.browserFSSetting,
+                    // window.BrowserFS.install(temp);
+                    // window.BrowserFS.configure(
+                    //     target.browserFSSetting,
+                    ZenFs.configureSingle(target.browserFSSetting).then(
                         // {
                         // fs: "InMemory"
                         // fs: "LocalStorage",
@@ -196,14 +207,18 @@ const thePlugin = {
                         //     async: { fs: "IndexedDB", options: { storeName: "VirtualFS" } },
                         // }
                         // },
-                        () => {
+                        async () => {
                             // window.BdApi.ReqImpl.fs = temp.require("fs");
                             // window.BdApi.ReqImpl.path = temp.require("path");
                             // ReImplementationObject.fs = temp.require("fs");
 
                             // reimplementationsReady should be checked but nahh
-                            ReImplementationObject.fs = patchReadFileSync(patchMkdirSync(temp.require("fs")));
-                            ReImplementationObject.path = temp.require("path");
+                            // ReImplementationObject.fs = patchReadFileSync(patchMkdirSync(temp.require("fs")));
+                            ReImplementationObject.fs = ZenFs.fs;
+                            const path = await (await fetch("https://cdn.jsdelivr.net/npm/path-browserify@1.0.1/index.js")).text();
+                            const result = eval.call(window,"(()=>{const module = {};" + path + "return module.exports;})();\n//# sourceURL=betterDiscord://internal/path.js");
+                            // ReImplementationObject.path = /*temp.require("path")*/;
+                            ReImplementationObject.path = result;
                             if (Settings.plugins[this.name].safeMode == undefined || Settings.plugins[this.name].safeMode == false)
                                 // @ts-ignore
                                 windowBdCompatLayer.fsReadyPromise.resolve();
