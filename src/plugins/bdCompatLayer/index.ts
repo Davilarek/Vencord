@@ -471,7 +471,8 @@ const thePlugin = {
         //         return;
         //     clearInterval(checkInterval);
         Promise.all([windowBdCompatLayer.fsReadyPromise.promise, injectedAndPatched]).then(() => {
-            getGlobalApi().DOM.addStyle("bd-compat-layer-stuff", '.bd-compat-setting > div > h2 { display: none; } .bd-compat-setting label { height: 0px; width: 0px; } .bd-compat-setting div[class^="labelRow_"] { height: 0px; }');
+            // getGlobalApi().DOM.addStyle("bd-compat-layer-stuff", '.bd-compat-setting > div > h2 { display: none; } .bd-compat-setting label { height: 0px; width: 0px; } .bd-compat-setting div[class^="labelRow_"] { height: 0px; }');
+            getGlobalApi().DOM.addStyle("bd-compat-layer-stuff", ".bd-compat-setting .vc-plugins-setting-title { display: none; }");
             windowBdCompatLayer.Router?.listeners.add(windowBdCompatLayer.mainRouterListener);
             const observer = new MutationObserver(mutations => mutations.forEach(m => window.GeneratedPlugins.forEach(p => BdApiReImplementation.Plugins.isEnabled(p.name) && p.instance.observer?.(m))));
             observer.observe(document, {

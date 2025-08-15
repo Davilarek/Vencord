@@ -18,8 +18,8 @@
 
 import { classNameFactory } from "@api/Styles";
 import { FolderIcon, PlusIcon, RestartIcon } from "@components/Icons";
-import { QuickAction, QuickActionCard } from "@components/VencordSettings/quickActions";
-import { SettingsTab, wrapTab } from "@components/VencordSettings/shared";
+import { QuickAction, QuickActionCard } from "@components/settings/QuickAction";
+import { SettingsTab, wrapTab } from "@components/settings/tabs";
 import { Plugin } from "@utils/types";
 import { Card, Forms, React, useRef } from "@webpack/common";
 

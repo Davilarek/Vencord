@@ -19,7 +19,7 @@
 import ErrorBoundary from "@components/ErrorBoundary";
 import { ModalContent, ModalFooter, ModalHeader, ModalRoot, ModalSize, openModal } from "@utils/modal";
 import { OptionType, Plugin } from "@utils/types";
-import { Button, React } from "@webpack/common";
+import { Button, React, Text } from "@webpack/common";
 import { DetailedReactHTMLElement } from "react";
 
 import { PluginMeta } from "~plugins";
@@ -64,10 +64,10 @@ export type AssembledBetterDiscordPlugin = {
     myProxy: {} | undefined;
 };
 
-const modalStuff = {
-    TextElement_: undefined,
-    get TextElement() { return this.TextElement_ ??= getGlobalApi().Webpack.getModule(m => m?.Sizes?.SIZE_32 && m.Colors); },
-};
+// const modalStuff = {
+//     TextElement_: undefined,
+//     get TextElement() { return this.TextElement_ ??= getGlobalApi().Webpack.getModule(m => m?.Sizes?.SIZE_32 && m.Colors); },
+// };
 
 const pluginSettingsModalCreator = (props, name: string, child) => {
     return React.createElement(
@@ -89,6 +89,7 @@ const pluginSettingsModalCreator = (props, name: string, child) => {
                     separator: false,
                     className: "bd-addon-modal-header",
                 },
+                /*
                 React.createElement(
                     modalStuff.TextElement,
                     {
@@ -97,6 +98,14 @@ const pluginSettingsModalCreator = (props, name: string, child) => {
                         strong: true,
                     },
                     `${name} Settings`
+                )
+                */
+                React.createElement(
+                    Text,
+                    {
+                        variant: "text-lg/bold"
+                    },
+                    `${name} Settings`,
                 )
             ),
             React.createElement(
@@ -360,7 +369,9 @@ function parseLegacyMeta(pluginCode: string, filename: string) {
 function parseNewMeta(pluginCode: string, filename: string) {
     let lastSuccessfulMetaLine = 0;
     let metaEndLine = 0;
-    const resultMeta = { name: "", id: "", description: "", authors: [{}] as { id: number, name: string }[], version: "" };
+    const resultMeta = { name: "", id: "", description: "", authors: [] as { id: number, name: string }[], version: "" };
+    let authorIds = [] as number[];
+    let authorNames = [] as string[];
     try {
         const metadata = pluginCode
             .split("/**")[1]
@@ -378,19 +389,25 @@ function parseNewMeta(pluginCode: string, filename: string) {
             } else if (element.startsWith("@description")) {
                 resultMeta.description = element.split("@description ")[1];
             } else if (element.startsWith("@authorId")) {
-                resultMeta.authors[0].id = BigInt(
-                    element.split("@authorId ")[1]
-                ) as unknown as number;
+                authorIds = element.split("@authorId ")[1].split(",").map(x => BigInt(x.trim())) as unknown[] as number[];
             } else if (element.startsWith("@author")) {
-                resultMeta.authors[0].name = element.split("@author ")[1];
-                // eslint-disable-next-line eqeqeq
-            } else if (element != "" && element.length > 2)
+                authorNames = element.split("@author ")[1].split(",").map(x => x.trim());
+            } else if (element !== "" && element.length > 2)
                 resultMeta[element.split("@")[1].split(" ")[0]] = element.substring(element.split("@")[1].split(" ")[0].length + 2);
             lastSuccessfulMetaLine = i;
         }
     } catch (error) {
         console.error("Something snapped during parsing of meta for file:", filename, `The error got triggered after ${lastSuccessfulMetaLine}-nth line of meta`, "The error was:", error);
         throw error; // let the caller handle this >:)
+    }
+    if (authorNames.length > 0) {
+        for (let index = 0; index < authorNames.length; index++) {
+            const name = authorNames[index];
+            resultMeta.authors.push({
+                name,
+                id: authorIds[index] ?? 0n,
+            });
+        }
     }
     return { pluginMeta: resultMeta, metaEndLine };
 }

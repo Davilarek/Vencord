@@ -10,14 +10,13 @@ We will pull changes from upstream, so if you want to make a plugin for Vencord 
 
 ## Features
 
--   Super easy to install (Download Installer, open, click install button, done)
--   100+ plugins built in: [See a list](https://vencord.dev/plugins)
-    -   Some highlights: SpotifyControls, MessageLogger, Experiments, GameActivityToggle, Translate, NoTrack, QuickReply, Free Emotes/Stickers, PermissionsViewer, CustomCommands, ShowHiddenChannels, PronounDB
+-   Easy to install
+-   [100+ built in plugins](https://vencord.dev/plugins)
 -   Fairly lightweight despite the many inbuilt plugins
 -   Excellent Browser Support: Run Vencord in your Browser via extension or UserScript
--   Works on any Discord branch: Stable, Canary or PTB all work (though for the best experience I recommend stable!)
+-   Works on any Discord branch: Stable, Canary or PTB all work
 -   Custom CSS and Themes: Inbuilt css editor with support to import any css files (including BetterDiscord themes)
--   Privacy friendly, blocks Discord analytics & crash reporting out of the box and has no telemetry
+-   Privacy friendly: blocks Discord analytics & crash reporting out of the box and has no telemetry
 -   Maintained very actively, broken plugins are usually fixed within 12 hours
 -   Settings sync: Keep your plugins and their settings synchronised between devices / apps (optional)
 -   BdApi Compatibility : Allows (most) BetterDiscord plugins to be ran as if it was normal BetterDiscord!
@@ -52,7 +51,7 @@ pnpm build --standalone
 ```
 pnpm buildWeb --standalone
 ```
-Could be optionally run if you intend to use BetterVencord on the web, like ArmCord, or Discord in a browser. 
+Could be optionally run if you intend to use BetterVencord on the web, like ArmCord, or Discord in a browser.
 
 After compile has finished, the resulting files in `dist` is required to be left intact, in order to maintain BetterVencord functionality. The rest of the source could be optionally removed. Should you wish to keep the source, you could for instance, set it up to have partial update functionality (see `Updating` section below), and/or for implementing other third party Vencord plugins
 
@@ -82,7 +81,7 @@ Steps to confirm:
 2. Scroll up to the point you see " Vencord   PluginManager  Starting plugin BD Compatibility Layer"
 3. Look around there for errors
 4. If you see something like `Access to fetch at https://xxxxxx/xxxxx from origin 'discord.com' has been blocked by CORS policy` 4 times close to eachother, it's likely this is your issue.
-   
+
 Solution:
 1. Find a suitable replacement for your CORS proxy url. It's up to the user to find an appropriate substitute for the cors proxy url. The default one is just an example.
 2. Open BD Compat Layer settings
@@ -94,14 +93,14 @@ Steps to confirm:
 2. You have a small amount of RAM installed or a small amount of free space.
 3. Open console
 4. See Out of Memory Error
-   
+
 Solution:
 There is no known fix for this issue right now. Try adding more RAM, perhaps.
 #### Issue #3
 Stepts to confirm:
 1. You have not enabled "Use Indexed DB Instead".
 2. You store large data (>10 MB) in Virtual Filesystem.
-   
+
 Solution:
 There is a limit on localStorage size that varies on different platforms. If possible try migrating to IndexedDB.
 
