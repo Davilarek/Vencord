@@ -6,4 +6,4 @@
 
 export const PLUGIN_NAME = "BD Compatibility Layer";
 export const BROWSERFS_BUILD_HASH = "1424d8eb5a28610e64fc8bde305eeb0676c9667e";
-export const ZENFS_BUILD_HASH = "9ce80f523dfa7ad75c989784e4d25bd023f84885";
+export const ZENFS_BUILD_HASH = "14df9f98c7ef9de2fefe4cb243d0f14a955b582c";
