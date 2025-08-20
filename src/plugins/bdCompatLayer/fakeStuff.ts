@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { addLogger, evalInScope, findFirstLineWithoutX } from "./utils";
+import { addLogger, compat_logger, evalInScope, findFirstLineWithoutX } from "./utils";
 
 export const TARGET_HASH = "df5c2887eb5eddb8d9f3e470b51cdfa5cec814db";
 
@@ -121,11 +121,25 @@ export const addContextMenu = async (DiscordModules, proxyUrl) => {
 };
 
 export async function fetchWithCorsProxyFallback(url: string, options: any = {}, corsProxy: string) {
+    const reqId = (Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
     try {
-        return await fetch(url, options);
+        compat_logger.debug(`[${reqId}] Requesting ${url}...`, options);
+        const result = await fetch(url, options);
+        compat_logger.debug(`[${reqId}] Success.`);
+        return result;
     } catch (error) {
-        if (options.method === undefined || options.method === "get")
-            return await fetch(`${corsProxy}${url}`, options);
+        if (options.method === undefined || options.method === "get") {
+            compat_logger.debug(`[${reqId}] Failed, trying with proxy.`);
+            try {
+                const result = await fetch(`${corsProxy}${url}`, options);
+                compat_logger.debug(`[${reqId}] (Proxy) Success.`);
+                return result;
+            } catch (error) {
+                compat_logger.debug(`[${reqId}] (Proxy) Failed completely.`);
+                throw error;
+            }
+        }
+        compat_logger.debug(`[${reqId}] Failed completely.`);
         throw error;
     }
 }

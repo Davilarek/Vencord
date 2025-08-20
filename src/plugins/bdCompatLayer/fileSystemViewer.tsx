@@ -27,7 +27,7 @@ import { PLUGIN_NAME } from "./constants";
 import { getGlobalApi } from "./fakeBdApi";
 import { addCustomPlugin, convertPlugin } from "./pluginConstructor";
 import TreeView, { findInTree, TreeNode } from "./treeView";
-import { FSUtils, readdirPromise, reloadCompatLayer, ZIPUtils } from "./utils";
+import { compat_logger, FSUtils, readdirPromise, reloadCompatLayer, ZIPUtils } from "./utils";
 
 type SettingsPlugin = Plugin & {
     customSections: ((ID: Record<string, unknown>) => any)[];
@@ -58,9 +58,9 @@ function makeTab() {
     const ref = useRef(baseNode.id);
 
     const handleNodeSelect = (node: TreeNode) => {
-        console.log(node);
+        compat_logger.log("Node:", node);
         // console.log(selectedNode);
-        console.log(ref.current);
+        compat_logger.log("Current ref:", ref.current);
         // setSelectedNode(node.id);
         ref.current = node.id;
     };
@@ -170,23 +170,23 @@ function makeTab() {
     return <SettingsTab title={TabName}>
         <Forms.FormSection title="File System Actions">
             <QuickActionCard>
-                <QuickAction text="Export Filesystem as ZIP" action={() => ZIPUtils.downloadZip()} Icon={FolderIcon}/>
-                <QuickAction text="Import Filesystem From ZIP" action={() => ZIPUtils.importZip()} Icon={FolderIcon}/>
-                <QuickAction text="Reload BD Plugins" action={() => reloadCompatLayer()} Icon={RestartIcon}/>
-                <QuickAction text="Import BD Plugin" action={async () => await FSUtils.importFile("//BD/plugins", true, false, ".js")} Icon={PlusIcon}/>
-                <QuickAction text="Import Bulk Plugins" action={async () => await FSUtils.importFile("//BD/plugins", true, true, ".js")} Icon={FolderIcon}/>
+                <QuickAction text="Export Filesystem as ZIP" action={() => ZIPUtils.downloadZip()} Icon={FolderIcon} />
+                <QuickAction text="Import Filesystem From ZIP" action={() => ZIPUtils.importZip()} Icon={FolderIcon} />
+                <QuickAction text="Reload BD Plugins" action={() => reloadCompatLayer()} Icon={RestartIcon} />
+                <QuickAction text="Import BD Plugin" action={async () => await FSUtils.importFile("//BD/plugins", true, false, ".js")} Icon={PlusIcon} />
+                <QuickAction text="Import Bulk Plugins" action={async () => await FSUtils.importFile("//BD/plugins", true, true, ".js")} Icon={FolderIcon} />
             </QuickActionCard>
-                  <Card className={cl("quick-actions-card")}>
-                    <Forms.FormText>Size of `/`: {
-                        (() => {
-                            try {
-                                return ((FSUtils.getDirectorySize("/") / 1024) / 1024).toFixed(2);
-                            } catch (error) {
-                                console.error("This error probably indicates filesystem breakage...", error);
-                                return "ERROR, CHECK CONSOLE";
-                            }
-                        })()
-                    } MB</Forms.FormText>
+            <Card className={cl("quick-actions-card")}>
+                <Forms.FormText>Size of `/`: {
+                    (() => {
+                        try {
+                            return ((FSUtils.getDirectorySize("/") / 1024) / 1024).toFixed(2);
+                        } catch (error) {
+                            compat_logger.error("This error probably indicates filesystem breakage...", error);
+                            return "ERROR, CHECK CONSOLE";
+                        }
+                    })()
+                } MB</Forms.FormText>
             </Card>
         </Forms.FormSection>
         {/* <TreeView onContextMenu={contextMenuHandler} selectedNode={selectedNode} selectNode={handleNodeSelect} data={ */}

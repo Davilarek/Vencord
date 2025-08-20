@@ -17,12 +17,15 @@
 */
 
 import { Link } from "@components/Link";
+import { Logger } from "@utils/Logger";
 import { PluginNative } from "@utils/types";
 import { Forms, lodash, React } from "@webpack/common";
 import * as fflate from "fflate";
 
 import { getGlobalApi } from "./fakeBdApi";
 import { addCustomPlugin, convertPlugin, removeAllCustomPlugins } from "./pluginConstructor";
+
+export const compat_logger = new Logger("BD Compat Layer", "#a6d189");
 
 export function getDeferred<T = any>() {
     let resolve: (value: T | PromiseLike<T>) => void;
@@ -41,7 +44,7 @@ export function getDeferred<T = any>() {
 // }
 export function evalInScope(js: string, contextAsScope: any) {
     // @ts-ignore
-    // eslint-disable-next-line quotes
+
     return new Function(["contextAsScope", "js"], "return (function() { with(this) { return eval(js); } }).call(contextAsScope)")(contextAsScope, js);
 }
 
@@ -205,7 +208,7 @@ export function openFileSelect(filter = "*", bulk = false) {
 }
 
 export async function reloadCompatLayer() {
-    console.warn("Removing plugins...");
+    compat_logger.warn("Removing plugins...");
     await removeAllCustomPlugins();
     await new Promise((resolve, reject) => setTimeout(resolve, 500));
     const localFs = window.require("fs");
@@ -226,7 +229,7 @@ export async function reloadCompatLayer() {
             addCustomPlugin(plugin);
         });
         conv.catch(what => {
-            console.error("Error during conversion of", element, "what was:", what);
+            compat_logger.error("Error during conversion of", element, "what was:", what);
         });
     }
 }
@@ -366,14 +369,14 @@ export const FSUtils = {
         const path = window.require("path");
         for (const file of files) {
             let filePath = targetPath;
-            console.log("Importing file", filePath);
+            compat_logger.log("[Importer] Importing file", filePath);
             if (autoGuessName) {
                 if (!targetPath.endsWith("/")) {
                     filePath += "/";
                 }
                 filePath += file.name;
             }
-            console.log("Resolved path:", filePath);
+            compat_logger.log("[Importer] Resolved path:", filePath);
             fs.writeFile(
                 filePath,
                 // window.BrowserFS.BFSRequire("buffer").Buffer.from(
@@ -383,8 +386,8 @@ export const FSUtils = {
                 ),
                 err => {
                     if (err)
-                        console.error("Error during import", err);
-                    console.log("Success");
+                        compat_logger.error("[Importer] Error during import", err);
+                    compat_logger.log("[Importer] Success");
                 }
             );
         }
@@ -501,12 +504,12 @@ export const ZIPUtils = {
         FSUtils.formatFs();
         for (let i = 0; i < zip1.length; i++) {
             const element = zip1[i];
-            console.log(element.name);
+            compat_logger.log("[Importer] Now: " + element.name);
             const fullReadPromise = new Promise<Uint8Array[]>((resolve, reject) => {
                 const out: Uint8Array[] = [];
                 element.ondata = (err, data, final) => {
                     if (err) {
-                        console.error("Failed at", element.name, err);
+                        compat_logger.error("[Importer] Failed at", element.name, err);
                         return;
                     }
                     out.push(data);
@@ -521,7 +524,7 @@ export const ZIPUtils = {
             FSUtils.mkdirSyncRecursive("/" + (isDir ? element.name : path.dirname(element.name)));
             if (isDir) continue;
 
-            console.log("Writing", out);
+            compat_logger.log("[Importer] Writing", out);
             fs.writeFile(
                 "/" + element.name,
                 // window.BrowserFS.BFSRequire("buffer").Buffer.concat(
@@ -531,7 +534,7 @@ export const ZIPUtils = {
                 () => { }
             );
         }
-        return console.log("ZIP import finished");
+        return compat_logger.log("[Importer] ZIP import finished");
         // return;
         /*
         const zip = fflate.unzipSync(new Uint8Array(await (await openFileSelect() as File).arrayBuffer()));

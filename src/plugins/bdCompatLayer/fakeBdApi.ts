@@ -29,7 +29,7 @@ import { PLUGIN_NAME } from "./constants";
 import { fetchWithCorsProxyFallback } from "./fakeStuff";
 import { AssembledBetterDiscordPlugin } from "./pluginConstructor";
 import { getModule as BdApi_getModule, monkeyPatch as BdApi_monkeyPatch, Patcher, ReactUtils_filler } from "./stuffFromBD";
-import { addLogger, createTextForm, docCreateElement, ObjectMerger } from "./utils";
+import { addLogger, compat_logger, createTextForm, docCreateElement, ObjectMerger } from "./utils";
 
 class PatcherWrapper {
     #label;
@@ -125,7 +125,7 @@ export const WebpackHolder = {
         bySource(...something) {
             const moduleCache = Vencord.Webpack.wreq.m;
 
-            return (_unused: unknown, module: { id?: number }) => {
+            return (_unused: unknown, module: { id?: number; }) => {
                 if (!module?.id) return false;
 
                 let source: string;
@@ -260,7 +260,7 @@ export const WebpackHolder = {
     get getMangled() {
         return Vencord.Webpack.mapMangledModule;
     },
-    getWithKey(filter, options: { target?: any } = {}) {
+    getWithKey(filter, options: { target?: any; } = {}) {
         const { target: opt_target = null, ...unrelated } = options;
         const cache = {
             target: opt_target,
@@ -423,17 +423,17 @@ type SettingsType = {
     collapsible?: boolean,
     shown?: boolean,
     value?: any,
-    options?: { label: string, value: number }[],
+    options?: { label: string, value: number; }[],
 };
 
-const _ReactDOM_With_createRoot = {} as typeof Vencord.Webpack.Common.ReactDOM & { createRoot: typeof Vencord.Webpack.Common.createRoot };
+const _ReactDOM_With_createRoot = {} as typeof Vencord.Webpack.Common.ReactDOM & { createRoot: typeof Vencord.Webpack.Common.createRoot; };
 
 export const UIHolder = {
     alert(title: string, content: any) {
         return this.showConfirmationModal(title, content, { cancelText: null });
     },
     helper() {
-        console.info("hi");
+        compat_logger.error(new Error("Not implemented."));
     },
     showToast(message, toastType = 1) {
         const { createToast, showToast } = getGlobalApi().Webpack.getModule(x => x.createToast && x.showToast);
@@ -616,7 +616,7 @@ export const UIHolder = {
         return { // yeah... no. atleast not right now (it's midnight)
             label: "",
             show() {
-                console.warn("Remind davil to implement tooltip grrr!");
+                compat_logger.warn("Remind davil to implement tooltip grrr!");
                 return null;
             },
             hide() {
@@ -626,9 +626,9 @@ export const UIHolder = {
     },
     showChangelogModal() {
         // yeah... no. atleast not right now (it's midnight again lol)
-        console.warn("Remind davil to implement changelog modal grrr!");
+        compat_logger.warn("Remind davil to implement changelog modal grrr!");
     },
-    buildSettingsPanel(options: { settings: SettingsType[], onChange: CallableFunction }) {
+    buildSettingsPanel(options: { settings: SettingsType[], onChange: CallableFunction; }) {
         const settings: React.ReactNode[] = [];
         const { React } = getGlobalApi();
         const defaultCatId = "null";
@@ -671,7 +671,7 @@ export const UIHolder = {
             const tempResult: React.ReactNode[] = [];
             for (let i = 0; i < now.length; i++) {
                 const current = now[i];
-                const fakeOption: PluginOptionBase & { type: number } = {
+                const fakeOption: PluginOptionBase & { type: number; } = {
                     description: "",
                     type: 0,
                 };
@@ -722,7 +722,7 @@ export const UIHolder = {
                             onChange(newValue) {
                                 targetSettingsToSet[catName][current.id] = newValue;
                             },
-                            onError() { },
+                            // onError() { },
                             pluginSettings: targetSettingsToSet[catName],
                         })
                     ]);
@@ -881,7 +881,7 @@ class BdApiReImplementationInstance {
         get Text() {
             return Vencord.Webpack.Common.Text;
         },
-        SwitchInput(props: { id: string, value: boolean, onChange: (v: boolean) => void }) {
+        SwitchInput(props: { id: string, value: boolean, onChange: (v: boolean) => void; }) {
             return getGlobalApi().UI.buildSettingsPanel({
                 settings: [{
                     id: props.id,
@@ -894,7 +894,7 @@ class BdApiReImplementationInstance {
                 },
             });
         },
-        SettingGroup(props: { id: string, name: string, children: React.ReactNode | React.ReactNode[] }) {
+        SettingGroup(props: { id: string, name: string, children: React.ReactNode | React.ReactNode[]; }) {
             return Vencord.Webpack.Common.React.createElement("span", {}, [getGlobalApi().UI.buildSettingsPanel({
                 settings: [{
                     id: props.id,
@@ -905,7 +905,7 @@ class BdApiReImplementationInstance {
                 onChange(c, id, v) { },
             })], props.children); // ew
         },
-        SettingItem(props: { id: string, name: string, note: string, children: React.ReactNode | React.ReactNode[] }) {
+        SettingItem(props: { id: string, name: string, note: string, children: React.ReactNode | React.ReactNode[]; }) {
             // return Vencord.Webpack.Common.React.createElement("div", {
             //     id: `bd_compat-item-${props.id}`,
             // }, [props.name, props.note, props.children]);
@@ -919,11 +919,11 @@ class BdApiReImplementationInstance {
                     component: () => createTextForm(props.name, props.note, false),
                 },
                 onChange(newValue) { },
-                onError() { },
+                // onError() { },
                 pluginSettings: { enabled: true, },
             }), props.children]);
         },
-        RadioInput(props: { name: string, onChange: (new_curr: string) => void, value: any, options: { name: string, value: any }[] }) {
+        RadioInput(props: { name: string, onChange: (new_curr: string) => void, value: any, options: { name: string, value: any; }[]; }) {
             return getGlobalApi().UI.buildSettingsPanel({
                 settings: [{
                     id: `bd_compat-radio-${props.name}`,
@@ -1000,7 +1000,7 @@ class BdApiReImplementationInstance {
             try {
                 return method(...params);
             } catch (err) {
-                console.error(err, `Error occured in ${message}`);
+                compat_logger.error(err, `Error occured in ${message}`);
             }
         };
     }
