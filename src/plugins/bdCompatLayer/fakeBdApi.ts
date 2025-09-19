@@ -709,9 +709,29 @@ export const UIHolder = {
                         fakeOption.type = OptionType.SLIDER;
                         fakeOption.description = current.note!;
                         const fakeOptionAsSlider = fakeOption as PluginOptionSlider;
-                        if (typeof current.markers![0] === "object") fakeOptionAsSlider.markers = current.markers!.map(x => (x as { label: string, value: number }).value);
-                        else fakeOptionAsSlider.markers = current.markers! as number[];
-                        fakeOptionAsSlider.stickToMarkers = Reflect.get(current, "stickToMarkers");
+                        
+                        if (current.markers) {
+                            if (typeof current.markers[0] === "object") {
+                                fakeOptionAsSlider.markers = current.markers.map(x => (x as { label: string, value: number }).value);
+                            } else {
+                                fakeOptionAsSlider.markers = current.markers as number[];
+                            }
+                            fakeOptionAsSlider.stickToMarkers = Reflect.get(current, "stickToMarkers");
+                        } else if (typeof current["min"] !== "undefined" && typeof current["max"] !== "undefined") {
+                            const min = current["min"] as number;
+                            const max = current["max"] as number;
+                            
+                            fakeOptionAsSlider.markers = [min, max];
+                            fakeOptionAsSlider.stickToMarkers = false;
+                            
+                            fakeOptionAsSlider.componentProps = {
+                                onValueRender: (v: number) => {
+                                    const rounded = parseFloat(v.toFixed(2));
+                                    return rounded % 1 === 0 ? String(Math.round(rounded)) : String(rounded);
+                                }
+                            };
+                        }
+                        
                         break;
                     }
                     default: {
