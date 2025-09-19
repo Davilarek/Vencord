@@ -22,9 +22,10 @@ const VenComponents = OptionComponentMap;
 
 import { OptionComponentMap } from "@components/settings/tabs/plugins/components";
 import { ModalAPI } from "@utils/modal";
-import { OptionType, PluginOptionBase, PluginOptionComponent, PluginOptionSelect, PluginOptionSlider } from "@utils/types";
+import { OptionType, PluginOptionBase, PluginOptionComponent, PluginOptionCustom, PluginOptionSelect, PluginOptionSlider } from "@utils/types";
 import { Forms, lodash, Text } from "@webpack/common";
 
+import { ColorPickerSettingComponent } from "./components/ColorPickerSetting";
 import { PLUGIN_NAME } from "./constants";
 import { fetchWithCorsProxyFallback } from "./fakeStuff";
 import { AssembledBetterDiscordPlugin } from "./pluginConstructor";
@@ -734,6 +735,26 @@ export const UIHolder = {
                                 }
                             };
                         }
+                        break;
+                    }
+                    case "color": {
+                        fakeOption.type = OptionType.COMPONENT;
+                        fakeOption.description = current.note!;
+                        const fakeOptionAsComponent = fakeOption as unknown as PluginOptionComponent;
+                        const fakeOptionAsCustom = fakeOption as unknown as PluginOptionCustom & {
+                            type: any,
+                            color: string,
+                            colorPresets: string[],
+                            description: string,
+                        };
+                        fakeOptionAsCustom.color = current.value || "#000000";
+                        fakeOptionAsCustom.colorPresets = [];
+                        fakeOptionAsComponent.component = p => React.createElement(ColorPickerSettingComponent, {
+                            onChange: p.setValue,
+                            option: fakeOptionAsCustom,
+                            pluginSettings: targetSettingsToSet[catName],
+                            id: current.id,
+                        });
                         break;
                     }
                     default: {
