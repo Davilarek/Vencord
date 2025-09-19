@@ -22,6 +22,10 @@ import { ColorPicker, useState } from "@webpack/common";
 
 export function ColorPickerSettingComponent(props: SettingProps<PluginSettingCommon & { color: string, colorPresets: string[], }>) {
     const [error, setError] = useState<string | null>(null);
+    const handleColorChange = (colorInt: number) => {
+        const hexColor = "#" + colorInt.toString(16).padStart(6, "0");
+        props.onChange(hexColor);
+    };
     return <SettingsSection name={props.id} description={props.option.description} error={error}>
         {/* return (<div className={cl("settings")}>
         <div className={cl("container")}>
@@ -30,14 +34,14 @@ export function ColorPickerSettingComponent(props: SettingProps<PluginSettingCom
                 <Forms.FormText>${props.option.description}</Forms.FormText>
             </div>
             */}
-            <ColorPicker
-                color={parseInt(props.option.color, 16)}
-                onChange={props.onChange}
-                showEyeDropper={false}
-                suggestedColors={props.option.colorPresets}
-            // {...props.option.componentProps}
-            />
+        <ColorPicker
+            color={parseInt((props.option.color || "#000000").replace("#", ""), 16)}
+            onChange={handleColorChange}
+            showEyeDropper={false}
+            suggestedColors={props.option.colorPresets}
+        // {...props.option.componentProps}
+        />
         {/* </div>*/}
-    {/* </div>);*/}
+        {/* </div>);*/}
     </SettingsSection>
 }
