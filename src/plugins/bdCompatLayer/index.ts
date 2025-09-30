@@ -78,6 +78,7 @@ const thePlugin = {
             default: false,
             restartNeeded: true,
         },
+        /*
         ...(!IS_WEB && {
             usePoorlyMadeRealFs: {
                 description: "Uses your very own filesystem to manage plugins, etc. Not recommended as there is no security for this option. Use at your own risk, basically. Not functional right now.",
@@ -86,6 +87,7 @@ const thePlugin = {
                 restartNeeded: true,
             }
         }),
+        */
         safeMode: {
             description: "Loads only filesystem",
             type: OptionType.BOOLEAN,
@@ -139,7 +141,8 @@ const thePlugin = {
             Settings.plugins[this.name].pluginsStatus = this.options.pluginsStatus.default;
         }
         // const Filer = this.simpleGET(proxyUrl + "https://github.com/jvilk/BrowserFS/releases/download/v1.4.3/browserfs.js");
-        const reallyUsePoorlyMadeRealFs = IS_WEB ? false : (Settings.plugins[this.name].usePoorlyMadeRealFs ?? this.options.usePoorlyMadeRealFs!.default);
+        // const reallyUsePoorlyMadeRealFs = IS_WEB ? false : (Settings.plugins[this.name].usePoorlyMadeRealFs ?? this.options.usePoorlyMadeRealFs!.default);
+        const reallyUsePoorlyMadeRealFs = false;
         if (!reallyUsePoorlyMadeRealFs) {
             fetch(
                 proxyUrl +
@@ -166,17 +169,16 @@ const thePlugin = {
                     const temp: any = {};
                     const target = {
                         browserFSSetting: {},
+                        client: null as typeof zen.RealFSClient | null,
                     }; // because "let" sucks
-                    /*
                     if (Settings.plugins[this.name].useRealFsInstead === true) {
+                        target.client = new zen.RealFSClient("localhost:8000/api/v1/ws"); // TODO: add option to change this
                         target.browserFSSetting = {
-                            fs: "AsyncMirror",
-                            options: {
-                                sync: { fs: "InMemory" },
-                                async: { fs: "RealFS", options: { apiUrl: "http://localhost:2137/api" } },
-                            },
+                            backend: zen.RealFs,
+                            sync: ZenFs.InMemory,
+                            client: target.client,
                         };
-                    } else*/ if (Settings.plugins[this.name].useIndexedDBInstead === true) {
+                    } else if (Settings.plugins[this.name].useIndexedDBInstead === true) {
                         target.browserFSSetting = {
                             // fs: "AsyncMirror",
                             // options: {
@@ -210,6 +212,7 @@ const thePlugin = {
                         // }
                         // },
                         async () => {
+                            if (target.client && target.client instanceof zen.RealFSClient) await target.client.ready;
                             // window.BdApi.ReqImpl.fs = temp.require("fs");
                             // window.BdApi.ReqImpl.path = temp.require("path");
                             // ReImplementationObject.fs = temp.require("fs");
