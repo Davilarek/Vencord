@@ -22,9 +22,10 @@ const VenComponents = OptionComponentMap;
 
 import { OptionComponentMap } from "@components/settings/tabs/plugins/components";
 import { ModalAPI } from "@utils/modal";
-import { OptionType, PluginOptionBase, PluginOptionComponent, PluginOptionSelect } from "@utils/types";
+import { OptionType, PluginOptionBase, PluginOptionComponent, PluginOptionCustom, PluginOptionSelect, PluginOptionSlider } from "@utils/types";
 import { Forms, lodash, Text } from "@webpack/common";
 
+import { ColorPickerSettingComponent } from "./components/ColorPickerSetting";
 import { PLUGIN_NAME } from "./constants";
 import { fetchWithCorsProxyFallback } from "./fakeStuff";
 import { AssembledBetterDiscordPlugin } from "./pluginConstructor";
@@ -146,7 +147,26 @@ export const WebpackHolder = {
                 [...fields.flat()].every(field => field in x.prototype);
         },
     },
-    getModule: BdApi_getModule,
+    // getModule: BdApi_getModule,
+    getModule(...args: Parameters<typeof BdApi_getModule>) {
+        if (args[1] && args[1].raw === true) {
+            const fn = args[0];
+            const final = {
+                id: 0,
+                exports: null,
+            };
+            BdApi_getModule((wrappedExport, module, index) => {
+                const result = fn(wrappedExport, module, index);
+                if (result) {
+                    final.exports = module.exports;
+                    final.id = parseInt(index, 10);
+                }
+                return result;
+            }, args[1]);
+            return final.exports === null ? undefined : final;
+        }
+        return BdApi_getModule(...args);
+    },
     waitForModule(filter) {
         return new Promise((resolve, reject) => {
             Vencord.Webpack.waitFor(filter, module => {
@@ -199,7 +219,7 @@ export const WebpackHolder = {
     },
     getByPrototypes(...fields) {
         const moreOpts = getOptions(fields);
-        return this.getModule(this.Filters.byPrototypeKeys(fields), moreOpts);
+        return WebpackHolder.getModule(WebpackHolder.Filters.byPrototypeKeys(fields), moreOpts);
     },
     get getByPrototypeKeys() {
         return this.getByPrototypes;
@@ -219,7 +239,7 @@ export const WebpackHolder = {
     },
     getByStrings(...strings) {
         const moreOpts = getOptions(strings);
-        return this.getModule(this.Filters.byStrings(...strings.flat()), moreOpts);
+        return WebpackHolder.getModule(WebpackHolder.Filters.byStrings(...strings.flat()), moreOpts);
     },
     getBySource(...strings) {
         const moreOpts = getOptions(strings);
@@ -343,6 +363,15 @@ export const WebpackHolder = {
                 return keys;
             },
         });
+    },
+    getBulk(...mapping: { filter: (m: any) => unknown, searchExports?: boolean }[]) {
+        const len = mapping.length;
+        const result = new Array(len);
+        for (let i = 0; i < len; i++) {
+            const { filter, ...opts } = mapping[i];
+            result[i] = WebpackHolder.getModule(filter, opts)
+        }
+        return result;
     },
 };
 
@@ -519,14 +548,14 @@ export const UIHolder = {
 
         const { timeout = 0, type = "default" } = options;
         const buttons = [
-            { label: "Close", onClick: () => { } },
+            { label: "Close", onClick: x => { x(); } },
             ...options.buttons || []
         ];
 
         const buttonElements = buttons.map((button, index) => {
             const onClickHandler = () => {
-                button.onClick();
-                closeNotification();
+                button.onClick(closeNotification);
+                // closeNotification();
             };
 
             // return React.createElement(
@@ -586,7 +615,7 @@ export const UIHolder = {
         // ) : (
         //     React.isValidElement(content) ? content : React.createElement("div", { className: "content" }, " ") // Very nice looking fallback. I dont know why I dont optimize code along the way.
         // );
-        const contentComponent = docCreateElement("div", { className: "content" }, [typeof content === "string" ? docCreateElement("span", { innerText: title }) : content]);
+        const contentComponent = docCreateElement("div", { className: "content" }, [typeof content === "string" ? docCreateElement("span", { innerText: content }) : content]);
 
         // const customNotification = React.createElement(
         //     "div",
@@ -608,6 +637,7 @@ export const UIHolder = {
         if (timeout > 0) {
             setTimeout(closeNotification, timeout);
         }
+        return closeNotification;
     },
     showNotice(content, options) {
         return this.showNotice_("Notice", content, options);
@@ -701,6 +731,58 @@ export const UIHolder = {
                         fakeOption.description = current.note!;
                         const fakeOptionAsSelect = fakeOption as PluginOptionSelect;
                         fakeOptionAsSelect.options = current.options!;
+                        break;
+                    }
+                    case "slider": {
+                        fakeOption.type = OptionType.SLIDER;
+                        fakeOption.description = current.note!;
+                        const fakeOptionAsSlider = fakeOption as PluginOptionSlider;
+                        const currentAsSliderCompatible = current as typeof current & {
+                            stickToMarkers?: boolean,
+                            min?: number,
+                            max?: number,
+                            markers?: (number | { label: string, value: number })[],
+                        };
+
+                        if (currentAsSliderCompatible.markers) {
+                            if (typeof currentAsSliderCompatible.markers[0] === "object") {
+                                fakeOptionAsSlider.markers = currentAsSliderCompatible.markers.map(x => (x as { label: string, value: number }).value);
+                            } else {
+                                fakeOptionAsSlider.markers = currentAsSliderCompatible.markers as number[];
+                            }
+                            fakeOptionAsSlider.stickToMarkers = Reflect.get(currentAsSliderCompatible, "stickToMarkers");
+                        } else if (typeof currentAsSliderCompatible.min !== "undefined" && typeof currentAsSliderCompatible.max !== "undefined") {
+                            const min = currentAsSliderCompatible.min as number;
+                            const max = currentAsSliderCompatible.max as number;
+                            fakeOptionAsSlider.markers = [min, max];
+                            fakeOptionAsSlider.stickToMarkers = false;
+                            fakeOptionAsSlider.componentProps = {
+                                onValueRender: (v: number) => {
+                                    const rounded = parseFloat(v.toFixed(2));
+                                    return rounded % 1 === 0 ? String(Math.round(rounded)) : String(rounded);
+                                }
+                            };
+                        }
+                        break;
+                    }
+                    case "color": {
+                        fakeOption.type = OptionType.COMPONENT;
+                        fakeOption.description = current.note!;
+                        const fakeOptionAsComponent = fakeOption as unknown as PluginOptionComponent;
+                        const fakeOptionAsCustom = fakeOption as unknown as PluginOptionCustom & {
+                            type: any,
+                            color: string,
+                            colorPresets: string[],
+                            description: string,
+                        };
+                        fakeOptionAsCustom.color = current.value || "#000000";
+                        fakeOptionAsCustom.colorPresets = [];
+                        fakeOptionAsComponent.component = p => React.createElement(ColorPickerSettingComponent, {
+                            onChange: p.setValue,
+                            option: fakeOptionAsCustom,
+                            pluginSettings: targetSettingsToSet[catName],
+                            id: current.id,
+                        });
                         break;
                     }
                     default: {
@@ -824,6 +906,15 @@ class DOMWrapper {
     }
 }
 
+const components = {
+    Spinner_holder: null as React.Component | null,
+    get Spinner() {
+        if (components.Spinner_holder === null)
+            components.Spinner_holder = Vencord.Webpack.findByCode(".SPINNER_LOADING_LABEL");
+        return components.Spinner_holder;
+    },
+};
+
 class BdApiReImplementationInstance {
     #targetPlugin;
     #patcher: PatcherWrapper | typeof Patcher;
@@ -880,6 +971,12 @@ class BdApiReImplementationInstance {
         },
         get Text() {
             return Vencord.Webpack.Common.Text;
+        },
+        get Button() {
+            return Vencord.Webpack.Common.Button;
+        },
+        get Spinner() {
+            return components.Spinner;
         },
         SwitchInput(props: { id: string, value: boolean, onChange: (v: boolean) => void; }) {
             return getGlobalApi().UI.buildSettingsPanel({
@@ -1022,6 +1119,7 @@ class BdApiReImplementationInstance {
     }
     readonly Utils = {
         findInTree(tree, searchFilter, options = {}) {
+            const this_ = getGlobalApi().Utils;
             const { walkable = null, ignore = [] } = options as { walkable: string[], ignore: string[]; };
 
             function findInObject(obj) {
@@ -1044,14 +1142,14 @@ class BdApiReImplementationInstance {
 
             if (Array.isArray(tree)) {
                 for (const value of tree) {
-                    const result = this.findInTree(value, searchFilter, { walkable, ignore });
+                    const result = this_.findInTree(value, searchFilter, { walkable, ignore });
                     if (result !== undefined) return result;
                 }
             } else if (typeof tree === "object" && tree !== null) {
                 const keysToWalk = walkable || Object.keys(tree);
                 for (const key of keysToWalk) {
                     if (tree[key] === undefined) continue;
-                    const result = this.findInTree(tree[key], searchFilter, { walkable, ignore });
+                    const result = this_.findInTree(tree[key], searchFilter, { walkable, ignore });
                     if (result !== undefined) return result;
                 }
             }
@@ -1120,30 +1218,24 @@ class BdApiReImplementationInstance {
         return DOMHolder.removeScript.bind(DOMHolder);
     }
 }
+const api_gettersToSet = ["Components", "ContextMenu", "DOM", "Data", "Patcher", "Plugins", "React", "ReactDOM", "ReactUtils", "UI", "Net", "Utils", "Webpack", "labelsOfInstancedAPI", "alert", "disableSetting", "enableSetting", "findModule", "findModuleByProps", "findAllModules", "getData", "isSettingEnabled", "loadData", "monkeyPatch", "saveData", "setData", "showConfirmationModal", "showNotice", "showToast", "suppressErrors", "injectCSS", "Logger", "linkJS", "unlinkJS", "clearCSS"];
+const api_settersToSet = ["ContextMenu"];
 
 function assignToGlobal() {
     const letsHopeThisObjectWillBeTheOnlyGlobalBdApiInstance = new BdApiReImplementationInstance();
-    const gettersToSet = ["Components", "ContextMenu", "DOM", "Data", "Patcher", "Plugins", "React", "ReactDOM", "ReactUtils", "UI", "Net", "Utils", "Webpack", "labelsOfInstancedAPI", "alert", "disableSetting", "enableSetting", "findModule", "findModuleByProps", "findAllModules", "getData", "isSettingEnabled", "loadData", "monkeyPatch", "saveData", "setData", "showConfirmationModal", "showNotice", "showToast", "suppressErrors", "injectCSS", "Logger", "linkJS", "unlinkJS", "clearCSS"];
-    const settersToSet = ["ContextMenu"];
-    for (let index = 0; index < gettersToSet.length; index++) {
-        const element = gettersToSet[index];
-        let setter = undefined as ((v: any) => any) | undefined;
-        if (settersToSet.indexOf(element) !== -1) {
-            setter = (v => letsHopeThisObjectWillBeTheOnlyGlobalBdApiInstance[element] = v);
-        }
-        Object.defineProperty(BdApiReImplementationInstance, element, {
-            get: () => letsHopeThisObjectWillBeTheOnlyGlobalBdApiInstance[element],
-            set: setter,
-            configurable: true,
-        });
-    }
+    const descriptors = api_gettersToSet.reduce((acc, key) => {
+        acc[key] = {
+            get: () => letsHopeThisObjectWillBeTheOnlyGlobalBdApiInstance[key],
+            set: api_settersToSet.includes(key) ? v => letsHopeThisObjectWillBeTheOnlyGlobalBdApiInstance[key] = v : undefined,
+            configurable: true
+        };
+        return acc;
+    }, {} as PropertyDescriptorMap);
+    Object.defineProperties(BdApiReImplementationInstance, descriptors);
 }
 export function cleanupGlobal() {
-    const gettersToSet = ["Components", "ContextMenu", "DOM", "Data", "Patcher", "Plugins", "React", "ReactDOM", "ReactUtils", "UI", "Net", "Utils", "Webpack", "labelsOfInstancedAPI", "alert", "disableSetting", "enableSetting", "findModule", "findModuleByProps", "findAllModules", "getData", "isSettingEnabled", "loadData", "monkeyPatch", "saveData", "setData", "showConfirmationModal", "showNotice", "showToast", "suppressErrors", "injectCSS", "Logger", "linkJS", "unlinkJS", "clearCSS"];
-    for (let index = 0; index < gettersToSet.length; index++) {
-        const element = gettersToSet[index];
-        delete getGlobalApi()[element];
-    }
+    const globalApi = getGlobalApi();
+    api_gettersToSet.forEach(key => delete globalApi[key]);
 }
 type BdApiReImplementationGlobal = typeof BdApiReImplementationInstance & BdApiReImplementationInstance;
 

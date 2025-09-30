@@ -12,7 +12,7 @@ import { addLogger } from "./utils";
 const Logger = addLogger();
 
 /**
- * @summary Code taken from BetterDiscord
+ * @summary Code taken from BetterDiscord (sourced from commit: cb08178b7702fe2612343f279c007eb2a638a113)
  * @description Changes:
  *
  *  Formatting changed
@@ -43,7 +43,7 @@ function monkeyPatch(what, methodName, options) {
 }
 
 /**
- * @summary Code taken from BetterDiscord
+ * @summary Code taken from BetterDiscord (sourced from commit: cb08178b7702fe2612343f279c007eb2a638a113)
  * @description Changes:
  *
  *  Occurrences of "DiscordModules" replaced with "this.DiscordModules"
@@ -277,7 +277,7 @@ class Patcher {
 }
 
 /**
- * @summary Code taken from BetterDiscord
+ * @summary Code taken from BetterDiscord (sourced from commit: cb08178b7702fe2612343f279c007eb2a638a113)
  * @description Changes:
  *
  *  None
@@ -285,7 +285,7 @@ class Patcher {
 const hasThrown = new WeakSet();
 
 /**
- * @summary Code taken from BetterDiscord
+ * @summary Code taken from BetterDiscord (sourced from commit: cb08178b7702fe2612343f279c007eb2a638a113)
  * @description Changes:
  *
  *  Formatting changed
@@ -306,7 +306,7 @@ const wrapFilter = filter => (exports, module, moduleId) => {
 };
 
 /**
- * @summary Code taken from BetterDiscord
+ * @summary Code taken from BetterDiscord (sourced from commit: cb08178b7702fe2612343f279c007eb2a638a113)
  * @description Changes:
  *
  *  Occurrences of "this.getAllModules()" replaced with "Vencord.Webpack.cache"

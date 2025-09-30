@@ -243,7 +243,7 @@ export async function convertPlugin(BetterDiscordPlugin: string, filename: strin
     final.internals = wrapBetterDiscordPluginCode(BetterDiscordPlugin, filename);
     let { exports } = final.internals.module;
     if (typeof exports === "object") {
-        exports = exports[final.name];
+        exports = exports[final.name] ?? exports.default;
     }
     try {
         final.instance = exports.prototype ? new exports(final) : exports(final);
@@ -366,12 +366,34 @@ function parseLegacyMeta(pluginCode: string, filename: string) {
     return { pluginMeta: parsedLine, metaEndLine: 1 };
 }
 
+const as_yes_no = (b: boolean) => b ? "yes" : "no";
+
+const test_util = (source: string, what: string) => {
+    const startsWith = source.startsWith(what);
+    if (!startsWith)
+        return `startsWith ${what}? ${as_yes_no(startsWith)}\n`;
+    const validCheck1 = source.split(what + " ")[1];
+    const validCheck2 = (validCheck1?.length ?? 0) > 0;
+    const validCheck3 = (validCheck1?.split(",").length ?? 0) > 1;
+    const validScore = [validCheck1 !== undefined, validCheck2, validCheck3]
+        .filter(Boolean).length;
+    const valid =
+        `source has target? ${as_yes_no(validCheck1 !== undefined)}\n` +
+        `match longer than 0? ${as_yes_no(validCheck2)}\n` +
+        `match has separators? ${as_yes_no(validCheck3)}`;
+    return "" +
+        `startsWith ${what}? ${as_yes_no(startsWith)}\n` +
+        `valid? ${validScore} / 3\n` +
+        `analysis: \n${valid.split("\n").map(x => "\t" + x).join("\n")}`;
+};
+
 function parseNewMeta(pluginCode: string, filename: string) {
     let lastSuccessfulMetaLine = 0;
     let metaEndLine = 0;
     const resultMeta = { name: "", id: "", description: "", authors: [] as { id: number, name: string; }[], version: "" };
     let authorIds = [] as number[];
     let authorNames = [] as string[];
+
     try {
         const metadata = pluginCode
             .split("/**")[1]
@@ -383,18 +405,28 @@ function parseNewMeta(pluginCode: string, filename: string) {
         metaEndLine = metadata.length + 3;
         for (let i = 0; i < metadata.length; i++) {
             const element = metadata[i].trim();
+            compat_logger.debug(`[Meta Parser] Executing for filename: ${filename}. Element: ${element}\n` +
+                test_util(element, "@name") + "\n" +
+                test_util(element, "@description") + "\n" +
+                test_util(element, "@authorLink") + "\n" +
+                test_util(element, "@authorId") + "\n" +
+                test_util(element, "@author") + "\n" +
+                test_util(element, "@version") + "\n"
+            );
             if (element.startsWith("@name")) {
                 resultMeta.name = element.split("@name")[1].trim();
                 resultMeta.id = resultMeta.name || window.require("path").basename(filename); // what?
             } else if (element.startsWith("@description")) {
                 resultMeta.description = element.split("@description ")[1];
+            } else if (element.startsWith("@authorLink")) {
+                // TODO: support this
             } else if (element.startsWith("@authorId")) {
                 authorIds = element.split("@authorId ")[1].split(",").map(x => BigInt(x.trim())) as unknown[] as number[];
             } else if (element.startsWith("@author")) {
                 authorNames = element.split("@author ")[1].split(",").map(x => x.trim());
             } else if (element !== "" && element.length > 2)
                 resultMeta[element.split("@")[1].split(" ")[0]] = element.substring(element.split("@")[1].split(" ")[0].length + 2);
-            lastSuccessfulMetaLine = i;
+            lastSuccessfulMetaLine = i + 1; // because we skipped the first line
         }
     } catch (error) {
         const lines = pluginCode.split("\n");
@@ -403,7 +435,7 @@ function parseNewMeta(pluginCode: string, filename: string) {
         const preview = lines.slice(previewStart, previewEnd)
             .map((curLine, index) => {
                 const actualLine = previewStart + index + 1;
-                if (actualLine === lastSuccessfulMetaLine + 1) {
+                if (actualLine === lastSuccessfulMetaLine + 2) { // +2 because we want the next line, the one after the last successful one
                     return `>>> HERE >>> ${actualLine}: ${curLine}`;
                 }
                 return `     ${actualLine}: ${curLine}`;

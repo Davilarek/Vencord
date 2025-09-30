@@ -55,8 +55,8 @@ export const TextInput = waitForComponent<t.TextInput>("TextInput", filters.comp
 export const TextArea = waitForComponent<t.TextArea>("TextArea", filters.componentByCode("this.getPaddingRight()},id:"));
 export const Text = waitForComponent<t.Text>("Text", filters.componentByCode('case"always-white"'));
 export const Heading = waitForComponent<t.Heading>("Heading", filters.componentByCode(">6?{", "variant:"));
-export const Select = waitForComponent<t.Select>("Select", filters.componentByCode('.selectPositionTop]:"top"===', '"Escape"==='));
-export const SearchableSelect = waitForComponent<t.SearchableSelect>("SearchableSelect", filters.componentByCode('.selectPositionTop]:"top"===', ".multi]:"));
+export const Select = waitForComponent<t.Select>("Select", filters.componentByCode('="bottom",', ".select,", '"Escape"==='));
+export const SearchableSelect = waitForComponent<t.SearchableSelect>("SearchableSelect", filters.componentByCode(".setSelectionRange(", ".multi]:"));
 export const Slider = waitForComponent<t.Slider>("Slider", filters.componentByCode('"markDash".concat('));
 export const Popout = waitForComponent<t.Popout>("Popout", filters.componentByCode("ref:this.ref,", "renderPopout:this.renderPopout,"));
 export const Dialog = waitForComponent<t.Dialog>("Dialog", filters.componentByCode('role:"dialog",tabIndex:-1'));
@@ -87,13 +87,7 @@ export const ListScrollerNone = LazyComponent(() => createListScroller(listScrol
 export const ListScrollerThin = LazyComponent(() => createListScroller(listScrollerClasses.thin, listScrollerClasses.fade, "", ResizeObserver));
 export const ListScrollerAuto = LazyComponent(() => createListScroller(listScrollerClasses.auto, listScrollerClasses.fade, "", ResizeObserver));
 
-const { FocusLock_ } = mapMangledModuleLazy('document.getElementById("app-mount"))', {
-    FocusLock_: filters.componentByCode(".containerRef")
-}) as {
-    FocusLock_: t.FocusLock;
-};
-
-export const FocusLock = LazyComponent(() => FocusLock_);
+export const FocusLock = waitForComponent<t.FocusLock>("FocusLock", filters.componentByCode(".containerRef,{keyboardModeEnabled:"));
 
 export let useToken: t.useToken;
 waitFor(m => {

@@ -532,6 +532,7 @@ const thePlugin = {
                 border-radius: 5px;
                 box-shadow: var(--legacy-elevation-border),var(--legacy-elevation-high);
                 animation: 1s slide cubic-bezier(0.39, 0.58, 0.57, 1);
+                z-index: 1;
             }
             @keyframes slide {
                 0% {
