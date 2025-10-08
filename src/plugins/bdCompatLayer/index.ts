@@ -153,15 +153,10 @@ const thePlugin = {
             )
                 .then(out => out.text())
                 .then(out2 => {
+                    out2 = "'use strict';\n" + out2;
                     out2 += "\n//# sourceURL=betterDiscord://internal/BrowserFs.js";
-                    eval.call(
-                        window,
-                        // out2.replaceAll(
-                        //     ".localStorage",
-                        //     ".Vencord.Util.localStorage"
-                        // )
-                        out2
-                    );
+                    const ev = new Function(out2);
+                    ev.call({});
                     const zen = globalThis.ZenFS_Aquire();
                     const ZenFs = zen.zenfs;
                     const ZenFsDom = zen.zenfs_dom;
